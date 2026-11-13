@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>マルミツ鮮魚 発注フォーム</title>
+<style>
+:root{--bg:#f2f6f7;--surface:#fff;--ink:#14303a;--sub:#5d7480;--line:#d9e3e7;--sea:#0b6e8a;--sea-soft:#e3f2f6;--warn:#b3402a;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1b20;--surface:#16262d;--ink:#e6f0f3;--sub:#93aab5;--line:#27404a;--sea:#4cb8d4;--sea-soft:#183842;--warn:#ff9a82}}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 "Hiragino Sans","Noto Sans JP","Yu Gothic",sans-serif;padding-bottom:96px}
+header{padding:18px 16px 12px;background:var(--surface);border-bottom:1px solid var(--line)}
+h1{margin:0;font-size:19px;letter-spacing:.02em}
+.meta{margin:4px 0 0;color:var(--sub);font-size:13px}
+.meta b{color:var(--warn)}
+.ctl{display:flex;gap:8px;margin-top:12px}
+.ctl input,.ctl select{flex:1;min-width:0;font:inherit;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
+.note{margin:12px 16px 0;padding:10px 12px;background:var(--sea-soft);border-radius:8px;font-size:13px}
+h2{position:sticky;top:env(safe-area-inset-top,0px);z-index:2;margin:18px 0 0;padding:8px 16px;font-size:14px;background:var(--bg);border-bottom:2px solid var(--sea);color:var(--sea)}
+.item{display:flex;align-items:center;gap:10px;padding:11px 16px;background:var(--surface);border-bottom:1px solid var(--line)}
+.item.on{background:var(--sea-soft)}
+.info{flex:1;min-width:0}
+.nm{font-weight:600;line-height:1.35}
+.pr{font-size:13px;color:var(--sub);font-variant-numeric:tabular-nums}
+.tag{display:inline-block;margin-left:6px;padding:0 6px;border-radius:4px;background:var(--sea);color:var(--surface);font-size:11px}
+.qty{display:flex;align-items:center;gap:4px;flex:none}
+.qty button{width:36px;height:36px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);font-size:20px;line-height:1}
+.qty input{width:48px;height:36px;text-align:center;font:inherit;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink)}
+.u{font-size:12px;color:var(--sub);width:34px}
+.bar{position:fixed;left:0;right:0;bottom:0;display:flex;align-items:center;gap:12px;padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px));background:var(--surface);border-top:1px solid var(--line)}
+.bar span{flex:1;font-size:14px}
+.btn{border:0;border-radius:10px;padding:12px 18px;font:inherit;font-weight:700;background:var(--sea);color:var(--surface)}
+.btn.alt{background:var(--surface);color:var(--sea);border:1px solid var(--sea)}
+#panel{display:none;position:fixed;inset:0;z-index:5;background:var(--bg);padding:calc(16px + env(safe-area-inset-top,0px)) 16px calc(16px + env(safe-area-inset-bottom,0px));overflow:auto}
+#panel.show{display:block}
+#panel textarea{width:100%;height:46vh;font:14px/1.6 inherit;padding:12px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink)}
+.row{display:flex;gap:8px;margin-top:12px}
+.row>*{flex:1;text-align:center;text-decoration:none}
+#msg{min-height:1.5em;margin-top:8px;color:var(--sea);font-size:13px}
+.empty{padding:24px 16px;color:var(--sub);text-align:center}
+</style>
+</head>
+<body>
+<header>
+  <h1>マルミツ鮮魚 発注フォーム</h1>
+  <p class="meta"><span id="dt">読み込み中…</span> ／ <b>17時</b>集計</p>
+  <div class="ctl">
+    <select id="store" aria-label="店舗名"><option value="">店舗を選択</option><option>青山店</option><option>辻井店</option><option>網干店</option><option>花田店</option><option>北野店</option><option>阿弥陀店</option><option>朝霧店</option><option>須磨店</option><option>六甲店</option><option>ノース店</option><option>西宮店</option></select>
+    <input id="q" type="search" placeholder="魚名で絞り込み" aria-label="絞り込み">
+  </div>
+</header>
+<p class="note">前浜物は夜漁のため、入荷なしの場合があります。k=kg単位、cs=ケース単位です。</p>
+<main id="list"></main>
+<div class="bar"><span id="sum">未選択</span><button class="btn" id="open">注文を確認</button></div>
+<section id="panel" aria-label="注文内容">
+  <h1>注文内容の確認</h1>
+  <p class="meta">内容を確認して、コピーまたはLINEで送信してください。</p>
+  <textarea id="txt" readonly></textarea>
+  <div class="row"><button class="btn" id="copy">コピーする</button><a class="btn alt" id="line" target="_blank" rel="noopener">LINEで送る</a></div>
+  <div class="row"><button class="btn alt" id="close">フォームに戻る</button></div>
+  <div id="msg"></div>
+</section>
+<script>
+var DATA = `#兵庫・前浜物
+天然真鯛 活ジメ 兵庫 1尾1.3k|k|1350
+天然真鯛 野ジメ 兵庫 1尾1.4/1.8k|k|1100
+天然真鯛 野ジメ 兵庫 1尾1.0/1.3k|k|1100
+天然真鯛 野ジメ 兵庫 1尾300g|k|600
+チヌ 野ジメ 1尾1.2k|k|600
+スズキ 兵庫 1尾1.8k|k|1300
+ガシラ 兵庫 1.0k 4/5入|cs|2200
+ガシラ 兵庫 2.0k 16入|cs|3400
+足赤エビ 兵庫 1.0k 30/35入|k|3800
+シラサエビ 兵庫 1.0k 40/45入|k|2800
+マナガツオ 兵庫 1.8k 8入|cs|4000
+モンゴイカ 活ジメ 兵庫 1尾400/500g|k|1500
+モンゴイカ 野ジメ 兵庫 1尾450g|k|1250
+サワラ 兵庫 刺し網 1尾1.8/2.0k|k|1400|良品
+タチウオ 釣 淡路 2.0k 8入|cs|3200
+タチウオ 釣 淡路 2.0k 10入|cs|2900
+#青物
+真イワシ 愛知 3.0k 1尾30g|cs|1100
+真イワシ大 鹿児島 4.0k 1尾100g|cs|2800
+小アジ 兵庫 2.0k 1尾30g|cs|1200
+小アジ 三重 2.0k 1尾40g|cs|900
+天然ブリ 活ジメ 石川 1尾7.0k台|k|1500
+天然ブリ 定置 石川 10.0/12.0k 2入|k|1250
+天然ブリ 活ジメ 鳥取 10.0/12.0k 2入|k|830
+天然ハマチ 活ジメ 福岡 10.0k 4入|cs|5600
+天然ハマチ 活ジメ 鳥取 11.0k 4入|cs|5900
+天然ツバス 活ジメ 鳥取 6.0k 5入|cs|3800
+天然ツバス 三重 5.0k 4入|cs|3500
+天然カンパチ 高知 5.0/5.5k 8入|cs|4300
+天然ヒラマサ 活ジメ 7.0/8.0k 4入|k|900
+天然ヒラマサ 活ジメ 11.0/12.0k 6入|k|850
+#アジ・サバ
+真あじ 長崎 3.0k 6/8入|cs|2750|脂あり
+真あじ 佐賀 3.0k 5/6入|cs|2750|脂あり
+真あじ 長崎(新漁) BOX 8.0k 14/16入|cs|5800
+真あじ 佐賀(新漁) BOX 8.0k 22/24入|cs|5100
+丸アジ 高知(新漁) 4.0k 20入|cs|2250
+真サバ 長崎 4.0/4.5k 6入|cs|3800
+真サバ 長崎 4.0/4.5k 7入|cs|3300
+真サバ 佐賀 4.5/5.0k 7入|cs|3300
+真サバ 長崎 4.5/5.0k 8入|cs|3800
+真サバ 三重 4.5k 10入|cs|2850
+#サワラ・サゴシ
+サワラ 大阪 刺し網 4.0/5.0k 2入|k|1400
+サワラ 大阪 刺し網 6.0/7.0k 4入|k|1200
+サワラ 山口 刺し網 8.0/9.0k 4入|k|1350
+サワラ 石川 6.0/7.0k 4入|k|1100
+サワラ 鳥取 5.5/6.0k 5入|k|650
+サゴシ 福井 4.0k 5/6入|cs|2650
+サゴシ 福井 4.0k 8入|cs|2650
+#イカ
+スルメイカ バラ 宮城 4.0k 20入前後|cs|3600
+ヤリイカ バラ 宮城 4.0k 45入前後|cs|3800
+生ケンイカ 長崎 4.0k 24入|cs|11000
+冷凍ケンイカ 長崎 4.2/4.5k 18入|cs|11000
+冷凍ケンイカ 長崎 4.2/4.5k 24入|cs|9800
+#釣り物・その他鮮魚
+タチウオ 釣り 大分 2.5k 4/5入|cs|6600
+タチウオ 釣り 大分 2.0k 7入|cs|4600
+金目鯛 釣り 静岡下田 2.7k 4入|k|2700
+金目鯛 釣り 静岡御前崎 2.5k 10入|k|2650
+赤イサキ 長崎 5.0k 12/15入|cs|5800
+キンキ 釣り 岩手 2.6k 8入|k|5300|良品
+天然ヒラメ 活ジメ 青森 3.0k 4/5入|cs|3300
+グレ 福井 4.0k 8入|cs|3300
+マカレイ 北海道 5.0k 9/10入|cs|5100
+マカレイ 北海道 5.0k 11/15入|cs|5100
+エテカレイ 北海道 5.0k 6/8入|cs|3600
+カマス 大分 2.0k 13/14入|cs|3100
+アコウ 富山 3.0k 13/15入|cs|3800
+アンコウ 腹抜き 島根 6.0k 3入|k|1400
+アンコウ 腹抜き 韓国 5.0k 4入|k|900
+アンコウ 腹抜き 山口 7.0/8.0k 5/6入|k|1300
+骨切りハモ 愛媛 1.0k 4/6入|cs|2550|良品
+#カニ・フィレ・白子
+活オオズワイカニ 北海道 3.0k 6入|cs|6800
+タラフィレ 北海道 5.0k 5/8入|cs|9300
+タラ スキンレス 北海道 3.0k 4/5入|cs|5700
+解凍銀鮭フィレ 養殖 5.0k 政吉|cs|8300
+生油カレイ スキンレス 北海道 3.0k|cs|3600
+ボイルセコガニ 兵庫 1尾150/160g 10尾入(1尾750円)|cs|7500
+カニ棒身 国産 70g 5入(1パック550円)|pk|550
+スケコ 北海道 500g|pk|1850
+タラ白子 北海道 特選 500g|pk|3500|良品綺麗
+タラ白子 北海道 4特 500g|pk|2800
+タラ白子 北海道 2特 1.0k|cs|2800|おすすめ
+生シラス 静岡 100g 5入(1パック390円)|pk|390
+チルド釜揚げシラス 兵庫 2.0k|k|1850
+#貝類
+アサリ 愛知 1.0k 1粒25/30g|cs|2000
+アサリ 北海道 1.0k|cs|1700
+ホッキ貝 北海道 6.0k 29入|k|1000
+シジミ 宍道湖 大サイズ|k|900
+ハマグリ 千葉 1.0k 16/18入|cs|2000`;
+var UNIT={k:'kg',cs:'ケース',pk:'パック'}, DATE='11/13(金)店着', items=[], qty={};
+var $=function(i){return document.getElementById(i)};
+[].forEach(function(l){
+  if(l[0]==='#'){items.push({sec:l.slice(1)});return}
+  var p=l.split('|');items.push({id:items.length,name:p[0],unit:p[1],price:+p[2],tag:p[3]||''});
+});
+function yen(n){return '¥'+n.toLocaleString('ja-JP')}
+function render(){
+  var q=$('q').value.trim(),h='',sec='',buf='';
+  items.forEach(function(it){
+    if(it.sec!==undefined){if(buf)h+='<h2>'+sec+'</h2>'+buf;sec=it.sec;buf='';return}
+    if(q&&it.name.indexOf(q)<0)return;
+    var n=qty[it.id]||0;
+    buf+='<div class="item'+(n>0?' on':'')+'" data-id="'+it.id+'"><div class="info"><div class="nm">'+it.name+(it.tag?'<span class="tag">'+it.tag+'</span>':'')+'</div><div class="pr">'+yen(it.price)+' / '+UNIT[it.unit]+'</div></div><div class="qty"><button data-d="-1" aria-label="減らす">−</button><input type="number" inputmode="decimal" min="0" step="any" value="'+(n||'')+'" placeholder="0" aria-label="数量"><span class="u">'+UNIT[it.unit]+'</span><button data-d="1" aria-label="増やす">+</button></div></div>';
+  });
+  if(buf)h+='<h2>'+sec+'</h2>'+buf;
+  $('list').innerHTML=h||'<p class="empty">該当する商品がありません。別の魚名で探してください。</p>';
+  sum();
+}
+function sum(){
+  var c=Object.keys(qty).filter(function(k){return qty[k]>0}).length;
+  $('sum').textContent=c?c+'品目を選択中':'未選択';
+}
+function setQ(id,v){v=Math.max(0,Math.round(v*10)/10);if(v)qty[id]=v;else delete qty[id];
+  var row=document.querySelector('[data-id="'+id+'"]');
+  if(row){row.classList.toggle('on',v>0);row.querySelector('input').value=v||''}
+  sum();
+}
+$('list').addEventListener('click',function(e){
+  var b=e.target.closest('button');if(!b)return;
+  var id=b.closest('.item').dataset.id;setQ(id,(qty[id]||0)+ +b.dataset.d);
+});
+$('list').addEventListener('change',function(e){
+  if(e.target.tagName==='INPUT')setQ(e.target.closest('.item').dataset.id,parseFloat(e.target.value)||0);
+});
+$('q').addEventListener('input',render);
+try{$('store').value=localStorage.getItem('store')||''}catch(e){}
+$('store').addEventListener('change',function(){try{localStorage.setItem('store',$('store').value)}catch(e){}});
+function build(){
+  var s=$('store').value.trim()||'(店舗名未入力)';
+  var t='【発注】'+s+'\n'+DATE+'\n';
+  items.forEach(function(it){if(it.id!==undefined&&qty[it.id])t+='\n'+it.name+' … '+qty[it.id]+UNIT[it.unit]});
+  return t;
+}
+$('open').onclick=function(){
+  if(!$('store').value){$('sum').textContent='店舗を選択してください';window.scrollTo(0,0);return}
+  if(!Object.keys(qty).length){$('sum').textContent='数量を入力してください';return}
+  var t=build();$('txt').value=t;$('msg').textContent='';
+  $('line').href='https://line.me/R/oaMessage/@306wayjp/?'+encodeURIComponent(t);
+  $('panel').classList.add('show');
+};
+$('close').onclick=function(){$('panel').classList.remove('show')};
+$('copy').onclick=function(){
+  var ok=function(){$('msg').textContent='コピーしました。LINEに貼り付けて送信してください。'};
+  var ng=function(){$('txt').select();try{document.execCommand('copy');ok()}catch(e){$('msg').textContent='コピーできません。上の文面を長押しでコピーしてください。'}};
+  try{navigator.clipboard.writeText($('txt').value).then(ok,ng)}catch(e){ng()}
+};
+var API='https://script.google.com/macros/s/AKfycbx5_ToC-TX5HjiYLJHtMcO5X5ceA1dSZlTdcjlVjDBL6-KQyKJgYgyALVEKYr5TKVft/exec';
+function load(){
+  $('list').innerHTML='<p class="empty">本日のリストを読み込み中…</p>';
+  fetch(API).then(function(r){return r.json()}).then(function(j){
+    if(!j.items||!j.items.length){$('dt').textContent='本日のリスト未登録';$('list').innerHTML='<p class="empty">本日の鮮魚情報はまだ登録されていません。</p>';sum();return}
+    DATE=j.date?j.date+'店着':'';
+    $('dt').textContent=(j.date||'')+' 店着';
+    items=[{sec:'本日の鮮魚'}];
+    j.items.forEach(function(x,i){items.push({id:i+1,name:x.n,unit:x.u,price:x.p,tag:x.t||''})});
+    qty={};render();
+  }).catch(function(){$('dt').textContent='読み込み失敗';$('list').innerHTML='<p class="empty">リストを読み込めませんでした。ページを開き直してください。</p>'});
+}
+load();
+</script>
+</body>
+</html>
